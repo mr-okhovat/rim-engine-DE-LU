@@ -1,123 +1,141 @@
-# RIM Engine DE-LU – 4-Factor Risk Intelligence Model for the German/Luxembourg Power Market
+RIM Engine DE-LU – 4-Factor Risk Intelligence Model for the German/Luxembourg Power Market
 
-This repository contains a **Risk Intelligence Model (RIM) engine** for the DE-LU day-ahead power market.  
-It ingests real market fundamentals (prices, load, renewables) and constructs a **0–100 risk score** mapped into interpretable regimes.
+A production-ready analytical engine that transforms raw DE-LU power-market fundamentals into a 0–100 interpretable risk score.
+The model ingests real market data (price, load, renewables, imbalance proxies), constructs four quantitative risk factors, and evaluates the short-term regime of the market using AI-based analyst, forecaster, and evaluator agents.
 
-The project is designed as a **quant/risk research tool** and a prototype for an **AI-driven risk assistant** for short-term power trading and portfolio management.
+This project sits at the intersection of:
 
----
+Energy trading
 
-## 1. What this engine does
+Quantitative modeling
 
-- Loads **real German day-ahead price data** (DE-LU zone) from SMARD.
-- Merges it with:
-  - **Grid load** (demand)
-  - **Renewable generation (RES)** – wind, solar, biomass, hydro, etc.
-- Constructs a **4-factor RIM framework**:
+AI-assisted risk intelligence
 
-1. **RIM_PD** – Price Dynamics  
-   - Volatility, returns, z-scores vs rolling window  
-   - Detection of spikes and stress behaviour
+Grid-fundamental analytics
 
-2. **RIM_LD** – Load Dynamics  
-   - Load ramps (1h/3h)  
-   - Deviations vs 24h rolling baseline
+It is designed as both a research-grade quant tool and a foundation for an AI-driven risk assistant for short-term power trading and portfolio management.
 
-3. **RIM_RES** – Renewable Dynamics  
-   - Total RES output and ramps  
-   - Undershoot / overshoot vs recent patterns
+1. What this engine does
 
-4. **RIM_IMB** – Imbalance Stress (proxy)  
-   - Residual load = load – RES  
-   - Residual ramps and positive stress indicators
+The RIM Engine DE-LU computes a four-factor risk score:
 
-Each factor is normalised to 0–10 and then aggregated into a **global RIM score (0–100)**, which is mapped into regimes:
+Factor	Meaning	What it Detects
+PD – Price Dynamics	Volatility, jumps, deviations vs baseline	Market stress, auction shocks
+LD – Load Dynamics	Consumption ramps and anomalies	Demand spikes, winter stress
+RES – Renewable Generation Dynamics	RES ramps, under-generation, forecast swings	Solar/wind shocks, intra-day imbalance
+IMB – Residual Load & Imbalance Proxy	Load–RES gap and ramp imbalance	Scarcity, marginal plant stress
 
-- `REGIME_0_CALM`  
-- `REGIME_1_NORMAL`  
-- `REGIME_2_ATTENTION`  
-- `REGIME_3_STRESSED`  
-- `REGIME_4_SEVERE`
+Each factor is normalised and combined into a 0–100 market risk regime, mapped into interpretable categories:
 
----
+0–25: Stable
 
-## 2. AI Agents: Analyst, Forecaster, Evaluator
+25–50: Attention
 
-On top of the numerical engine, the notebook defines an **AI agent layer** (currently with a dummy fallback if no API key is set):
+50–75: Stressed
 
-- **Analyst LLM**  
-  Takes the latest RIM context and produces:
-  - short risk summary  
-  - key diagnostics (price, load, RES, residual load)  
-  - factor-level drivers (PD, LD, RES, IMB)
+75–100: Severe
 
-- **Forecaster LLM**  
-  Produces qualitative scenarios for:
-  - 0–6h horizon  
-  - 6–24h horizon  
-  With indications of:
-  - price direction (UP / DOWN / SIDEWAYS / UNCERTAIN)  
-  - volatility outlook  
-  - regime transition risk
+2. Why this matters
 
-- **Evaluator LLM**  
-  Acts as a **judge** over the Analyst/Forecaster outputs:
-  - scores the quality of the briefing  
-  - flags missing elements or weak structure  
-  - suggests corrections
+Short-term power trading (intraday, DA+ID arbitrage, PPA optimisation) depends on fast detection of:
 
-If no Gemini API key is configured, the notebook uses **deterministic dummy logic** so the full pipeline still runs end-to-end.
+Volatility clusters
 
----
+Load/RES forecast errors
 
-## 3. Notebook
+Scarcity regimes
 
-The main entry point today is:
+Imbalance-driven price risk
 
-- `notebooks/rim_engine_4factor.ipynb` (currently located in repo root, will be moved into `/notebooks` in a later refactor)
+This engine provides a transparent, data-driven framework to quantify these dynamics in real time.
 
-It contains, in order:
+3. Architecture Overview
+raw data  →  preprocessing  →  factor construction  →  risk score
+         →  AI analyst/forecaster/evaluator agents →  final panel
 
-1. Environment setup and imports  
-2. Data loading from SMARD-exported CSV files (prices, load, RES)  
-3. Feature engineering for price, load, and RES  
-4. RIM factor construction (PD, LD, RES, IMB)  
-5. Regime classification and 0–100 risk score  
-6. Construction of a **latest risk context** object  
-7. AI agent calls (Analyst, Forecaster, Evaluator)  
-8. Generation of a **4-factor Risk Intelligence panel** in text + JSON-like form
+Components
 
----
+/notebooks – Full development workflow & visualisation.
 
-## 4. Data
+/src – Modular library structure (ready for packaging).
 
-The project uses **publicly available SMARD data**, exported as CSV:
+/data/raw – Ingested market datasets.
 
-- `de_power_data.csv` – DE-LU day-ahead prices  
-- `de_load_data.csv` – grid load (MWh)  
-- `de_res_data.csv` – actual RES generation (15-min, aggregated to hourly)
+/data/processed – Cleaned hourly aligned features.
 
-These files are **not committed** to the public repo for size and licensing reasons.  
-You can download equivalent datasets yourself from SMARD:
+/panels – Exported JSON/Markdown intelligence panels.
 
-- SMARD data portal: https://www.smard.de
+Output artifacts
 
----
+df_rim_4f_clean.csv – Full 4F history
 
-## 5. Roadmap
+risk_panel_4f_latest.json – Machine-oriented last panel
 
-Planned future work:
+risk_panel_4f_latest.md – Human-readable report
 
-- [ ] Refactor notebook logic into modular Python package under `/src`
-- [ ] Add proper configuration layer (zones, horizons, factor weights)
-- [ ] Integrate real LLM calls (Gemini or OpenAI) via API keys
-- [ ] Add simple daily dashboard and plotting utilities
-- [ ] Extend to additional bidding zones and cross-border spreads
-- [ ] Introduce basic forecasting models (ML/TS) for RIM and prices
-- [ ] Package as a reusable library + CLI tool
+4. AI-Driven Risk Panel
 
----
+The engine uses lightweight AI agents (LLM or dummy fallbacks):
 
-## 6. License
+Analyst – Diagnoses current 4F regime
 
-This project is released under the **MIT License**.
+Forecaster – Generates short-term scenarios
+
+Evaluator – Performs structural quality control
+
+This creates a professional risk panel similar to internal tools used at energy trading firms.
+
+5. Key Features
+
+Real DE-LU fundamentals ingestion (price, load, RES)
+
+Robust timestamp alignment, resampling, and cleaning
+
+Four-factor quantitative regime model
+
+AI-assisted analyst layer
+
+Exportable panel for dashboards or reporting
+
+Easily extensible to:
+
+imbalance price,
+
+DA–ID spreads,
+
+unit-commitment proxy ramps,
+
+weather model deltas.
+
+6. Example Output
+RIM Score (4F): 37.3 → REGIME_2_ATTENTION
+Price: 8713 €/MWh | load: 49.4 GW | RES: 28.7 GWh | residual load: 20.7 GW
+
+Analyst: Medium volatility, RES under-performance, moderate imbalance stress.
+Forecaster: SIDEWAYS (0–6h), UNCERTAIN (6–24h)
+Evaluator: Score 0.80 – no structural issues detected.
+
+7. Roadmap
+
+Add probabilistic regime transition model
+
+Add imbalance price + net position proxies
+
+Add trader-ready signals (spread predictors, scarcity flags)
+
+Add REST API / Docker deployment
+
+Extend engine to FR, NL, BE zones
+
+Build full AI Grid Risk Assistant (GRA) product
+
+8. License
+
+MIT – open for research, commercial exploration, and extension.
+
+9. Author
+
+Mohammadreza Okhovat
+Energy market analyst (DE-LU), quant-product builder, AI enthusiast.
+LinkedIn: add your link
+GitHub: https://github.com/prshia2004
