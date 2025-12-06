@@ -137,5 +137,5 @@ MIT – open for research, commercial exploration, and extension.
 
 Mohammadreza Okhovat
 Energy market analyst (DE-LU), quant-product builder, AI enthusiast.
-LinkedIn: add your link
+LinkedIn: www.linkedin.com/in/mohammadreza-okhovat
 GitHub: https://github.com/prshia2004
