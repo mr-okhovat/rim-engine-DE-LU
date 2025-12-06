@@ -135,7 +135,7 @@ MIT – open for research, commercial exploration, and extension.
 
 9. Author
 
-Mohammadreza Okhovat
-Energy market analyst (DE-LU), quant-product builder, AI enthusiast.
-LinkedIn: www.linkedin.com/in/mohammadreza-okhovat
-GitHub: https://github.com/prshia2004
+Mohammadreza Okhovat  
+Energy market analyst (DE-LU), quant-product builder, AI-driven risk systems developer.  
+GitHub: https://github.com/okhovat-energy-ai  
+LinkedIn: https://www.linkedin.com/in/mohammadreza-okhovat/  
