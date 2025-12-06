@@ -139,3 +139,6 @@ Mohammadreza Okhovat
 Energy market analyst (DE-LU), quant-product builder, AI-driven risk systems developer.  
 GitHub: https://github.com/okhovat-energy-ai  
 LinkedIn: https://www.linkedin.com/in/mohammadreza-okhovat/  
+
+Maintained by **okhovat-energy-ai**  
+Building next-generation AI tools for European power markets.
