@@ -137,7 +137,7 @@ MIT – open for research, commercial exploration, and extension.
 
 Mohammadreza Okhovat  
 Energy market analyst (DE-LU), quant-product builder, AI-driven risk systems developer.  
-GitHub: https://github.com/okhovat-ai  
+GitHub: https://github.com/mr-okhovat 
 LinkedIn: https://www.linkedin.com/in/mohammadreza-okhovat/  
 
 Maintained by **okhovat-energy-ai**  
