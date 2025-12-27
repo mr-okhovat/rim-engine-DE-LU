@@ -1,0 +1,65 @@
+{
+  "zone": "DE-LU",
+  "config_hash": "056666a2ac87",
+  "latest_timestamp": "2025-12-02 23:00:00+01:00",
+  "latest": {
+    "RIM_0_100": 50.0,
+    "regime": "REGIME_3_STRESSED",
+    "factors_0_25": {
+      "PD": 12.5,
+      "LD": 12.5,
+      "RES": 12.5,
+      "IMB": 12.5
+    }
+  },
+  "ingestion_reports": {
+    "pd": {
+      "name": "pd",
+      "n_rows_raw": 264,
+      "n_rows_hourly": 264,
+      "n_gaps": 0,
+      "first_ts": "2025-11-20 00:00:00+01:00",
+      "last_ts": "2025-11-30 23:00:00+01:00",
+      "time_col": "Start date",
+      "value_col": "Germany/Luxembourg [\u20ac/MWh] Calculated resolutions",
+      "sep_used": ";",
+      "notes": []
+    },
+    "pd_neigh": {
+      "name": "pd_neigh",
+      "n_rows_raw": 264,
+      "n_rows_hourly": 264,
+      "n_gaps": 0,
+      "first_ts": "2025-11-20 00:00:00+01:00",
+      "last_ts": "2025-11-30 23:00:00+01:00",
+      "time_col": "Start date",
+      "value_col": "\u2205 DE/LU neighbours [\u20ac/MWh] Calculated resolutions",
+      "sep_used": ";",
+      "notes": []
+    },
+    "ld": {
+      "name": "ld",
+      "n_rows_raw": 264,
+      "n_rows_hourly": 264,
+      "n_gaps": 0,
+      "first_ts": "2025-11-22 00:00:00+01:00",
+      "last_ts": "2025-12-02 23:00:00+01:00",
+      "time_col": "Start date",
+      "value_col": "Grid load incl. hydro pumped storage [MWh] Calculated resolutions",
+      "sep_used": ";",
+      "notes": []
+    },
+    "residual_fc": {
+      "name": "residual_fc",
+      "n_rows_raw": 264,
+      "n_rows_hourly": 264,
+      "n_gaps": 0,
+      "first_ts": "2025-11-22 00:00:00+01:00",
+      "last_ts": "2025-12-02 23:00:00+01:00",
+      "time_col": "Start date",
+      "value_col": "Residual load [MWh] Calculated resolutions",
+      "sep_used": ";",
+      "notes": []
+    }
+  }
+}
