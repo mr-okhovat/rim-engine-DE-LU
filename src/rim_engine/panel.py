@@ -1,11 +1,13 @@
 from __future__ import annotations
+
 import json
 from pathlib import Path
 from typing import Dict, Tuple
+
 import pandas as pd
 
 from .config import RIMConfig, DatasetPaths
-from .io import load_inputs, DataQualityReport
+from .io import DataQualityReport, load_inputs
 from .processing import compute_factors
 from .regimes import map_score_to_regime
 
@@ -14,9 +16,11 @@ def build_risk_panel(ts: pd.DataFrame, cfg: RIMConfig, reports: Dict[str, DataQu
     ts_nonan = ts.dropna()
     if ts_nonan.empty:
         raise ValueError("No data available to build risk panel. Check ingestion and timestamps.")
+
     latest = ts_nonan.iloc[-1]
     rim = float(latest["RIM_0_100"])
     reg = map_score_to_regime(rim, cfg)
+
     return {
         "zone": cfg.zone,
         "config_hash": cfg.config_hash(),
@@ -38,6 +42,7 @@ def build_risk_panel(ts: pd.DataFrame, cfg: RIMConfig, reports: Dict[str, DataQu
 def panel_to_markdown(panel: Dict) -> str:
     latest = panel["latest"]
     f = latest["factors_0_25"]
+
     lines = [
         f"# RIM Risk Panel — {panel['zone']}",
         "",
@@ -55,11 +60,13 @@ def panel_to_markdown(panel: Dict) -> str:
         "",
         "## Ingestion quality (summary)",
     ]
+
     for name, rep in panel["ingestion_reports"].items():
         lines.append(
-            f"- **{name}**: rows_raw={rep['n_rows_raw']}, rows_hourly={rep['n_rows_hourly']}, gaps={rep['n_gaps']}, "
+            f"- **{name}**: rows_raw={rep['n_rows_raw']}, rows_valid={rep['n_rows_valid']}, "
             f"sep='{rep['sep_used']}', time='{rep['time_col']}', value='{rep['value_col']}'"
         )
+
     lines.append("")
     return "\n".join(lines)
 
@@ -72,14 +79,13 @@ def run_end_to_end(data_dir: Path, out_dir: Path, cfg: RIMConfig) -> Tuple[pd.Da
             "pd": paths.power_csv,
             "pd_neigh": paths.power_csv,
             "ld": paths.load_csv,
-            "residual_fc": paths.load_csv,
+            "res": paths.res_actual_csv,
         },
         tz=cfg.tz,
         freq=cfg.freq,
     )
 
-    res_actual = pd.read_csv(paths.res_actual_csv, sep=";", encoding="utf-8-sig")
-    fo = compute_factors(inputs, res_actual, cfg)
+    fo = compute_factors(inputs, cfg)
 
     ts = fo.factor_scores_0_25.copy()
     ts["RIM_0_100"] = fo.rim_score_0_100
@@ -91,4 +97,5 @@ def run_end_to_end(data_dir: Path, out_dir: Path, cfg: RIMConfig) -> Tuple[pd.Da
     panel = build_risk_panel(ts, cfg, reports)
     (out_dir / "risk_panel.json").write_text(json.dumps(panel, indent=2), encoding="utf-8")
     (out_dir / "risk_panel.md").write_text(panel_to_markdown(panel), encoding="utf-8")
+
     return ts, panel

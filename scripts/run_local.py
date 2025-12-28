@@ -1,0 +1,22 @@
+from pathlib import Path
+
+from rim_engine.config import RIMConfig
+from rim_engine.panel import run_end_to_end
+
+
+def main():
+    cfg = RIMConfig()
+    data_dir = Path("data")
+    out_dir = Path("outputs")
+
+    ts, panel = run_end_to_end(data_dir, out_dir, cfg)
+
+    print(
+        "OK | rows =", len(ts),
+        "| latest =", panel["latest_timestamp"],
+        "| RIM =", round(panel["latest"]["RIM_0_100"], 2),
+    )
+
+
+if __name__ == "__main__":
+    main()

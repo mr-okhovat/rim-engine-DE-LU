@@ -1,8 +1,9 @@
-\
 from __future__ import annotations
+
 from dataclasses import dataclass
 import numpy as np
 import pandas as pd
+
 from .config import RIMConfig
 
 
@@ -26,54 +27,94 @@ class FactorOutputs:
     drivers: pd.DataFrame
 
 
-def compute_factors(df_inputs: pd.DataFrame, df_res_actual: pd.DataFrame, cfg: RIMConfig) -> FactorOutputs:
+def _safe_align_to_index(s: pd.Series, idx: pd.DatetimeIndex) -> pd.Series:
+    if s.empty:
+        return pd.Series(index=idx, dtype=float)
+    return s.reindex(idx).ffill().bfill()
+
+
+def compute_factors(df_inputs: pd.DataFrame, cfg: RIMConfig) -> FactorOutputs:
+    """
+    Uses unified ingested inputs:
+      - pd, pd_neigh, ld, res
+
+    With your CURRENT sample data, RES is from 2023 and PD/LD are from 2025.
+    So we must not require full intersection across all columns, otherwise df becomes empty.
+
+    This function:
+      - builds PD & LD on PD/LD timeframe
+      - uses RES if it overlaps; otherwise sets RES factor neutral (12.5)
+      - uses IMB proxy from load ramp (until proper residual / imbalance sources are added)
+    """
     cfg.validate()
 
-    spread = (df_inputs["pd"] - df_inputs["pd_neigh"]).astype(float)
+    required = ["pd", "pd_neigh", "ld", "res"]
+    missing = [c for c in required if c not in df_inputs.columns]
+    if missing:
+        raise KeyError(f"compute_factors missing required columns: {missing}. Have: {list(df_inputs.columns)}")
+
+    df = df_inputs.copy().sort_index()
+    df = df[~df.index.isna()]
+
+    # Coerce numeric (io.py already does robust parsing, but keep safe)
+    for c in required:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+
+    # Determine a working index that does NOT force intersection with RES
+    # We use the union of pd/pd_neigh/ld timestamps, then drop rows where those are missing.
+    core = df[["pd", "pd_neigh", "ld"]].dropna()
+    if core.empty:
+        raise ValueError(
+            "compute_factors: core inputs (pd, pd_neigh, ld) are empty after coercion/dropna. "
+            "This indicates ingestion is still broken."
+        )
+    idx = core.index
+
+    # === PD factor (spread zscore) ===
+    spread = (core["pd"] - core["pd_neigh"]).astype(float)
     pd_score = z_to_0_25(rolling_zscore(spread, cfg.zscore_window_h))
 
-    load = df_inputs["ld"].astype(float)
+    # === LD factor (level + ramp) ===
+    load = core["ld"].astype(float)
     ramp_abs = load.diff().abs().fillna(0.0)
     ld_z = 0.7 * rolling_zscore(load, cfg.zscore_window_h) + 0.3 * rolling_zscore(ramp_abs, cfg.zscore_window_h)
     ld_score = z_to_0_25(ld_z)
 
-    res = df_res_actual.copy()
-    if "Start date" in res.columns:
-        res["Start date"] = pd.to_datetime(res["Start date"], errors="coerce")
-        res = res.dropna(subset=["Start date"]).set_index("Start date")
-    # Keep only numeric columns (drop e.g., 'End date')
-    res = res.apply(pd.to_numeric, errors='coerce')
-    if cfg.tz and res.index.tz is None:
-        res.index = res.index.tz_localize(cfg.tz, ambiguous="infer", nonexistent="shift_forward")
-    res = res.sort_index().resample(cfg.freq).mean()
+    # === RES factor ===
+    res_series = df["res"].dropna()
+    if res_series.empty:
+        # neutral if no res data at all
+        res_score = pd.Series(12.5, index=idx)
+        res_used = False
+    else:
+        # try to align res to idx; if no overlap, it becomes all NaN
+        res_aligned = res_series.reindex(idx)
+        if res_aligned.notna().sum() < max(5, len(idx) // 20):
+            # not enough overlap → neutral factor
+            res_score = pd.Series(12.5, index=idx)
+            res_used = False
+        else:
+            # use inverse res (low RES => higher risk)
+            inv_res = (
+    (1.0 / res_aligned.replace(0, np.nan))
+    .replace([np.inf, -np.inf], np.nan)
+    .ffill()
+    .bfill()
+)
 
-    ren_cols = [
-        "Biomass [MWh] Original resolutions",
-        "Hydropower [MWh] Original resolutions",
-        "Wind offshore [MWh] Original resolutions",
-        "Wind onshore [MWh] Original resolutions",
-        "Photovoltaics [MWh] Original resolutions",
-        "Other renewable [MWh] Original resolutions",
-    ]
-    missing = [c for c in ren_cols if c not in res.columns]
-    if missing:
-        raise KeyError(f"Missing renewable columns: {missing}")
+            inv_res = inv_res.fillna(inv_res.median() if inv_res.notna().any() else 0.0)
+            res_score = z_to_0_25(rolling_zscore(inv_res, cfg.zscore_window_h))
+            res_used = True
 
-    total_ren = res[ren_cols].sum(axis=1)
-    total_gen = res.select_dtypes(include=[np.number]).sum(axis=1).replace(0, np.nan)
-    share = (total_ren / total_gen).fillna(0.0)
-    inv_share = (1.0 - share).reindex(df_inputs.index).ffill().fillna(0.0)
-    res_score = z_to_0_25(rolling_zscore(inv_share, cfg.zscore_window_h))
-
-    residual_actual = (total_gen.fillna(0.0) - total_ren).reindex(df_inputs.index).ffill().fillna(0.0)
-    residual_fc = df_inputs["residual_fc"].astype(float)
-    mismatch = (residual_fc - residual_actual).abs()
-    imb_score = z_to_0_25(rolling_zscore(mismatch, cfg.zscore_window_h))
+    # === IMB factor (proxy until proper imbalance sources) ===
+    # For now: treat sudden load ramps as balancing stress proxy.
+    imb_proxy = ramp_abs
+    imb_score = z_to_0_25(rolling_zscore(imb_proxy, cfg.zscore_window_h))
 
     factors = pd.DataFrame(
         {"PD_0_25": pd_score, "LD_0_25": ld_score, "RES_0_25": res_score, "IMB_0_25": imb_score},
-        index=df_inputs.index,
-    )
+        index=idx,
+    ).sort_index()
 
     w = cfg.weights()
     rim_0_100 = (
@@ -84,8 +125,14 @@ def compute_factors(df_inputs: pd.DataFrame, df_res_actual: pd.DataFrame, cfg: R
     ) * 4.0
 
     drivers = pd.DataFrame(
-        {"pd_spread": spread, "ld_load": load, "ld_ramp_abs": ramp_abs, "res_inv_share": inv_share, "imb_mismatch": mismatch},
-        index=df_inputs.index,
+        {
+            "pd_spread": spread,
+            "ld_load": load,
+            "ld_ramp_abs": ramp_abs,
+            "res_used_flag": pd.Series(1.0 if res_used else 0.0, index=idx),
+            "imb_proxy": imb_proxy,
+        },
+        index=idx,
     )
 
     return FactorOutputs(factor_scores_0_25=factors, rim_score_0_100=rim_0_100, drivers=drivers)
