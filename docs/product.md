@@ -2,7 +2,7 @@
 
 ## Positioning
 
-The RIM Engine is a **deterministic, explainable risk-regime classification engine** for the German/Luxembourg power market.  
+The RIM Engine is a **deterministic, explainable risk-regime classification engine** for the German/Luxembourg power market.
 It converts heterogeneous hourly market signals into a **single, interpretable risk index (RIM_0_100)** supported by four transparent factor scores.
 
 It is designed for **situational awareness and risk context**, not for price prediction or automated trading.

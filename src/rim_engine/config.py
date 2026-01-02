@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Tuple
 
 
 @dataclass(frozen=True)
@@ -20,9 +19,9 @@ class RIMConfig:
     vol_window_h: int = 24
     vol_long_window_h: int = 72
 
-    regime_edges: Tuple[float, float, float] = (25.0, 50.0, 75.0)
+    regime_edges: tuple[float, float, float] = (25.0, 50.0, 75.0)
 
-    def weights(self) -> Dict[str, float]:
+    def weights(self) -> dict[str, float]:
         return {"pd": self.w_pd, "ld": self.w_ld, "res": self.w_res, "imb": self.w_imb}
 
     def validate(self) -> None:
@@ -31,7 +30,9 @@ class RIMConfig:
             raise ValueError(f"Factor weights must sum to 1.0. Got {s:.6f}")
 
     def config_hash(self) -> str:
-        import hashlib, json
+        import hashlib
+        import json
+
         payload = {
             "zone": self.zone,
             "freq": self.freq,
@@ -55,7 +56,7 @@ class DatasetPaths:
     res_actual_csv: Path
 
     @staticmethod
-    def from_data_dir(data_dir: Path) -> "DatasetPaths":
+    def from_data_dir(data_dir: Path) -> DatasetPaths:
         return DatasetPaths(
             power_csv=data_dir / "de_power_data.csv",
             load_csv=data_dir / "de_load_data.csv",

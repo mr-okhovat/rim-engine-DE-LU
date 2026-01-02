@@ -27,4 +27,3 @@ The pipeline produces:
 
 **Interpretation:**
 Higher PD indicates unusual price tension versus the benchmark, often coincident with stress (tightness, congestion effects, scarcity signals).
-

@@ -1,6 +1,6 @@
 # RIM Engine (DE-LU) — Executive Risk Regime Brief
 
-**Audience:** Senior management, risk committees, portfolio leadership  
+**Audience:** Senior management, risk committees, portfolio leadership
 **Purpose:** Provide a concise, explainable snapshot of current market risk conditions in the DE-LU power market.
 
 ---
@@ -10,7 +10,7 @@
 The Risk Regime Index (RIM_0_100) summarizes **current market stress conditions** by aggregating four transparent drivers:
 price dynamics, load dynamics, renewable stress, and balance pressure proxies.
 
-It is a **context indicator**, not a forecast.  
+It is a **context indicator**, not a forecast.
 Higher values indicate structurally tighter and more volatile market conditions.
 
 ---
@@ -28,16 +28,16 @@ This snapshot reflects **current operating conditions**, not expected outcomes.
 
 ## Key Drivers (Explainability Layer)
 
-- **Price Dynamics (PD):**  
+- **Price Dynamics (PD):**
   Indicates the degree of price tension versus benchmarks. Elevated values signal scarcity, congestion effects, or structural tightness.
 
-- **Load Dynamics (LD):**  
+- **Load Dynamics (LD):**
   Captures volatility and ramps in demand. High values increase operational uncertainty.
 
-- **Renewable Stress (RES):**  
+- **Renewable Stress (RES):**
   Reflects variability or shortfall in renewable availability relative to expectations.
 
-- **Imbalance Pressure (IMB):**  
+- **Imbalance Pressure (IMB):**
   A deterministic proxy indicating balance tightness; not a settlement price.
 
 Each driver is independently observable and bounded.

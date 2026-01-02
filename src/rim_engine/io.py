@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional, List, Tuple
 
 import pandas as pd
-
 
 # ======================================================
 # Data Quality Report
 # ======================================================
+
 
 @dataclass
 class DataQualityReport:
@@ -19,11 +18,11 @@ class DataQualityReport:
     sep_used: str
     n_rows_raw: int
     n_rows_valid: int
-    first_ts: Optional[str]
-    last_ts: Optional[str]
-    notes: List[str]
+    first_ts: str | None
+    last_ts: str | None
+    notes: list[str]
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "name": self.name,
             "time_col": self.time_col,
@@ -41,6 +40,7 @@ class DataQualityReport:
 # Deterministic Ingestion Specification
 # ======================================================
 
+
 @dataclass(frozen=True)
 class SeriesSpec:
     """
@@ -48,19 +48,20 @@ class SeriesSpec:
 
     If schema fields are provided, ingestion is deterministic.
     """
+
     name: str
 
     # Strict schema
-    time_col: Optional[str] = None
-    value_col: Optional[str] = None
-    sep: Optional[str] = None
-    datetime_format: Optional[str] = None
+    time_col: str | None = None
+    value_col: str | None = None
+    sep: str | None = None
+    datetime_format: str | None = None
 
     # Fallback heuristics (kept for robustness)
-    preferred_value_cols: Optional[List[str]] = None
-    preferred_time_cols: Optional[List[str]] = None
+    preferred_value_cols: list[str] | None = None
+    preferred_time_cols: list[str] | None = None
 
-    tz: Optional[str] = None
+    tz: str | None = None
     freq: str = "h"
 
     def __post_init__(self):
@@ -74,7 +75,8 @@ class SeriesSpec:
 # Helpers
 # ======================================================
 
-def _guess_col(df: pd.DataFrame, candidates: List[str]) -> Optional[str]:
+
+def _guess_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
     for c in candidates:
         if c in df.columns:
             return c
@@ -88,7 +90,7 @@ def _to_numeric_robust(s: pd.Series) -> pd.Series:
       - "51.882,82" (euro style)
       - "51882.82"
     """
-    x = s.astype(str).str.replace("\u00A0", " ", regex=False).str.strip()
+    x = s.astype(str).str.replace("\u00a0", " ", regex=False).str.strip()
 
     has_comma = x.str.contains(",", regex=False)
     has_dot = x.str.contains(".", regex=False)
@@ -101,9 +103,7 @@ def _to_numeric_robust(s: pd.Series) -> pd.Series:
     both = x.str.contains(r"\.", regex=True) & x.str.contains(r",", regex=True)
     euro_style = both & (~comma_thousands)
     x.loc[euro_style] = (
-        x.loc[euro_style]
-        .str.replace(".", "", regex=False)
-        .str.replace(",", ".", regex=False)
+        x.loc[euro_style].str.replace(".", "", regex=False).str.replace(",", ".", regex=False)
     )
 
     # Case 3: only comma decimal: 51882,82 -> swap comma to dot
@@ -119,7 +119,7 @@ def _finalize_series(
     name: str,
     idx: pd.Series,
     values: pd.Series,
-    tz: Optional[str],
+    tz: str | None,
     freq: str,
 ) -> pd.DataFrame:
     """
@@ -162,8 +162,9 @@ def _finalize_series(
 # Core CSV Loader (single-series CSV)
 # ======================================================
 
-def load_series_csv(path: Path, spec: SeriesSpec) -> Tuple[pd.DataFrame, DataQualityReport]:
-    notes: List[str] = []
+
+def load_series_csv(path: Path, spec: SeriesSpec) -> tuple[pd.DataFrame, DataQualityReport]:
+    notes: list[str] = []
 
     sep = spec.sep or ";"
     df = pd.read_csv(path, sep=sep, encoding="utf-8-sig", low_memory=False)
@@ -204,7 +205,10 @@ def load_series_csv(path: Path, spec: SeriesSpec) -> Tuple[pd.DataFrame, DataQua
 # RES Loader (multi-component CSV -> derived single series)
 # ======================================================
 
-def load_res_actual_csv(path: Path, tz: Optional[str], freq: str = "h") -> Tuple[pd.DataFrame, DataQualityReport]:
+
+def load_res_actual_csv(
+    path: Path, tz: str | None, freq: str = "h"
+) -> tuple[pd.DataFrame, DataQualityReport]:
     """
     Loads RES actual generation CSV and derives a single total RES series (wind+solar).
     Aggregates:
@@ -213,7 +217,7 @@ def load_res_actual_csv(path: Path, tz: Optional[str], freq: str = "h") -> Tuple
       - Photovoltaics
     Output column: 'res'
     """
-    notes: List[str] = []
+    notes: list[str] = []
     sep = ";"
     dtfmt = "%b %d, %Y %I:%M %p"
 
@@ -221,7 +225,9 @@ def load_res_actual_csv(path: Path, tz: Optional[str], freq: str = "h") -> Tuple
     n_rows_raw = len(df)
 
     if "Start date" not in df.columns:
-        raise ValueError(f"[res] Missing 'Start date' in {path.name}. Columns: {list(df.columns)[:30]}")
+        raise ValueError(
+            f"[res] Missing 'Start date' in {path.name}. Columns: {list(df.columns)[:30]}"
+        )
 
     idx = pd.to_datetime(df["Start date"], format=dtfmt, errors="coerce")
 
@@ -262,11 +268,12 @@ def load_res_actual_csv(path: Path, tz: Optional[str], freq: str = "h") -> Tuple
 # Public API — Load All Inputs
 # ======================================================
 
+
 def load_inputs(
-    paths: Dict[str, Path],
-    tz: Optional[str],
+    paths: dict[str, Path],
+    tz: str | None,
     freq: str = "h",
-) -> Tuple[pd.DataFrame, Dict[str, DataQualityReport]]:
+) -> tuple[pd.DataFrame, dict[str, DataQualityReport]]:
     """
     Loads and returns a unified dataframe of:
       - pd
@@ -280,7 +287,7 @@ def load_inputs(
     """
     dtfmt = "%b %d, %Y %I:%M %p"
 
-    SPECS: Dict[str, SeriesSpec] = {
+    SPECS: dict[str, SeriesSpec] = {
         "pd": SeriesSpec(
             name="pd",
             sep=";",
@@ -310,8 +317,8 @@ def load_inputs(
         ),
     }
 
-    frames: List[pd.DataFrame] = []
-    reports: Dict[str, DataQualityReport] = {}
+    frames: list[pd.DataFrame] = []
+    reports: dict[str, DataQualityReport] = {}
 
     for key, p in paths.items():
         if key == "res":

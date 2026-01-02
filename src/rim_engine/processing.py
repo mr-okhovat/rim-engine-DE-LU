@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 import numpy as np
 import pandas as pd
 
@@ -51,7 +52,9 @@ def compute_factors(df_inputs: pd.DataFrame, cfg: RIMConfig) -> FactorOutputs:
     required = ["pd", "pd_neigh", "ld", "res"]
     missing = [c for c in required if c not in df_inputs.columns]
     if missing:
-        raise KeyError(f"compute_factors missing required columns: {missing}. Have: {list(df_inputs.columns)}")
+        raise KeyError(
+            f"compute_factors missing required columns: {missing}. Have: {list(df_inputs.columns)}"
+        )
 
     df = df_inputs.copy().sort_index()
     df = df[~df.index.isna()]
@@ -77,7 +80,9 @@ def compute_factors(df_inputs: pd.DataFrame, cfg: RIMConfig) -> FactorOutputs:
     # === LD factor (level + ramp) ===
     load = core["ld"].astype(float)
     ramp_abs = load.diff().abs().fillna(0.0)
-    ld_z = 0.7 * rolling_zscore(load, cfg.zscore_window_h) + 0.3 * rolling_zscore(ramp_abs, cfg.zscore_window_h)
+    ld_z = 0.7 * rolling_zscore(load, cfg.zscore_window_h) + 0.3 * rolling_zscore(
+        ramp_abs, cfg.zscore_window_h
+    )
     ld_score = z_to_0_25(ld_z)
 
     # === RES factor ===
@@ -96,11 +101,11 @@ def compute_factors(df_inputs: pd.DataFrame, cfg: RIMConfig) -> FactorOutputs:
         else:
             # use inverse res (low RES => higher risk)
             inv_res = (
-    (1.0 / res_aligned.replace(0, np.nan))
-    .replace([np.inf, -np.inf], np.nan)
-    .ffill()
-    .bfill()
-)
+                (1.0 / res_aligned.replace(0, np.nan))
+                .replace([np.inf, -np.inf], np.nan)
+                .ffill()
+                .bfill()
+            )
 
             inv_res = inv_res.fillna(inv_res.median() if inv_res.notna().any() else 0.0)
             res_score = z_to_0_25(rolling_zscore(inv_res, cfg.zscore_window_h))

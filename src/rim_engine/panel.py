@@ -2,17 +2,18 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, Tuple
 
 import pandas as pd
 
-from .config import RIMConfig, DatasetPaths
+from .config import DatasetPaths, RIMConfig
 from .io import DataQualityReport, load_inputs
 from .processing import compute_factors
 from .regimes import map_score_to_regime
 
 
-def build_risk_panel(ts: pd.DataFrame, cfg: RIMConfig, reports: Dict[str, DataQualityReport]) -> Dict:
+def build_risk_panel(
+    ts: pd.DataFrame, cfg: RIMConfig, reports: dict[str, DataQualityReport]
+) -> dict:
     ts_nonan = ts.dropna()
     if ts_nonan.empty:
         raise ValueError("No data available to build risk panel. Check ingestion and timestamps.")
@@ -39,7 +40,7 @@ def build_risk_panel(ts: pd.DataFrame, cfg: RIMConfig, reports: Dict[str, DataQu
     }
 
 
-def panel_to_markdown(panel: Dict) -> str:
+def panel_to_markdown(panel: dict) -> str:
     latest = panel["latest"]
     f = latest["factors_0_25"]
 
@@ -71,7 +72,7 @@ def panel_to_markdown(panel: Dict) -> str:
     return "\n".join(lines)
 
 
-def run_end_to_end(data_dir: Path, out_dir: Path, cfg: RIMConfig) -> Tuple[pd.DataFrame, Dict]:
+def run_end_to_end(data_dir: Path, out_dir: Path, cfg: RIMConfig) -> tuple[pd.DataFrame, dict]:
     paths = DatasetPaths.from_data_dir(data_dir)
 
     inputs, reports = load_inputs(

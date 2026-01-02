@@ -55,5 +55,5 @@ All factor scores are bounded, deterministic, and interpretable.
 
 ## Example Row (Illustrative Only)
 
-Timestamp: 2025-01-15 13:00  
+Timestamp: 2025-01-15 13:00
 PD_0_25=6.0, LD_0_25=5.0, RES_0_25=7.0, IMB_0_25=4.0, RIM_0_100=22.0

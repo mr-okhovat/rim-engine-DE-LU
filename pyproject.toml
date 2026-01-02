@@ -22,3 +22,32 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+lint.select = [
+  "E",    # basic Python errors
+  "F",    # undefined names, unused imports
+  "I",    # import sorting
+  "UP",   # Python syntax modernization
+  "B",    # likely bugs
+]
+
+lint.ignore = [
+  "E501", # line length handled by formatter
+]
+
+exclude = [
+  ".venv",
+  "dist",
+  "build",
+  ".git",
+  "notebooks",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

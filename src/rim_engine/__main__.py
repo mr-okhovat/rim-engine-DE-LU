@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import argparse
 from pathlib import Path
+
 from .config import RIMConfig
 from .panel import run_end_to_end
 

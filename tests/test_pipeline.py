@@ -35,4 +35,3 @@ def test_end_to_end_runs(tmp_path: Path):
     # Guardrail: residual_fc should NOT be a required ingest input
     # (residual should be derived in processing as ld - res)
     assert "residual_fc" not in ts.columns
-
