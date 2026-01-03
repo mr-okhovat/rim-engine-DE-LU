@@ -6,31 +6,12 @@ from pathlib import Path
 
 import pandas as pd
 
+from rim_engine.regime_thresholds import THRESHOLDS_V1, derive_regime
+
 OUTPUT_DIR = Path("outputs")
 PANEL_FILE = OUTPUT_DIR / "rim_panel.csv"
 REPORT_JSON = OUTPUT_DIR / "eval_report.json"
 REPORT_MD = OUTPUT_DIR / "eval_report.md"
-
-
-# Keep thresholds centralized. If you later formalize docs/regime_thresholds.md into code,
-# this function becomes an adapter to that canonical definition.
-def derive_regime(rim: float) -> str:
-    """
-    Deterministic regime label derived from RIM_0_100.
-
-    Default v1 thresholds (conservative, monotonic):
-    - low:      [0, 25)
-    - moderate: [25, 50)
-    - elevated: [50, 75)
-    - high:     [75, 100]
-    """
-    if rim < 25:
-        return "low"
-    if rim < 50:
-        return "moderate"
-    if rim < 75:
-        return "elevated"
-    return "high"
 
 
 def load_panel() -> pd.DataFrame:
@@ -57,8 +38,8 @@ def regime_share(df: pd.DataFrame) -> dict:
 
 
 def average_regime_duration_hours(df: pd.DataFrame) -> float:
-    durations = []
-    current = None
+    durations: list[int] = []
+    current: str | None = None
     length = 0
 
     for r in df["regime"]:
@@ -99,10 +80,10 @@ def main() -> None:
         "avg_regime_duration_hours": float(average_regime_duration_hours(df)),
         "factor_dominance_elevated_high": factor_dominance(df),
         "thresholds_v1": {
-            "low_lt": 25,
-            "moderate_lt": 50,
-            "elevated_lt": 75,
-            "high_ge": 75,
+            "low_lt": THRESHOLDS_V1.low_lt,
+            "moderate_lt": THRESHOLDS_V1.moderate_lt,
+            "elevated_lt": THRESHOLDS_V1.elevated_lt,
+            "high_ge": THRESHOLDS_V1.elevated_lt,
         },
     }
 
@@ -125,10 +106,10 @@ def main() -> None:
         )
         + "\n\n"
         "## Thresholds (v1)\n"
-        "- low: RIM < 25\n"
-        "- moderate: 25 ≤ RIM < 50\n"
-        "- elevated: 50 ≤ RIM < 75\n"
-        "- high: RIM ≥ 75\n"
+        f"- low: RIM < {THRESHOLDS_V1.low_lt:g}\n"
+        f"- moderate: {THRESHOLDS_V1.low_lt:g} ≤ RIM < {THRESHOLDS_V1.moderate_lt:g}\n"
+        f"- elevated: {THRESHOLDS_V1.moderate_lt:g} ≤ RIM < {THRESHOLDS_V1.elevated_lt:g}\n"
+        f"- high: RIM ≥ {THRESHOLDS_V1.elevated_lt:g}\n"
     )
 
     print("Evaluation complete.")
