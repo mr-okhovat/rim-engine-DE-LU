@@ -24,6 +24,14 @@ def main() -> int:
 
         ts, panel = run_end_to_end(data_dir, out_dir, cfg)
 
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        # Canonical artifact for downstream consumers (evaluation, API, CI artifacts)
+        # Ensure timestamp is explicit as the first column.
+        ts_out = ts.copy()
+        ts_out.insert(0, "ts", ts_out.index)
+        ts_out.to_csv(out_dir / "rim_panel.csv", index=False)
+
         print(
             "OK | rows =",
             len(ts),
