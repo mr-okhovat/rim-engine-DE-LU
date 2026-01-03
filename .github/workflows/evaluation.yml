@@ -1,0 +1,46 @@
+name: Evaluation
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install ruff pytest
+
+      - name: Run unit tests
+        run: |
+          pytest -q
+
+      - name: Generate canonical panel
+        run: |
+          python -m scripts.run_local
+
+      - name: Run deterministic evaluation
+        run: |
+          python scripts/evaluate_historical.py
+
+      - name: Upload evaluation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rim-evaluation
+          path: |
+            outputs/eval_report.json
+            outputs/eval_report.md
